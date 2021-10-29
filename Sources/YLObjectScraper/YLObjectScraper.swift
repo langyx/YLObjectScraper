@@ -20,7 +20,7 @@ open class YLObjectScraper<T: Codable> {
 }
 
 extension YLObjectScraper {
-    func get(with parameters: [String: String]? = nil,
+    open func get(with parameters: [String: String]? = nil,
              save: Bool = true,
              completion: ((T)->())? = nil) {
         networkManager.call(url: endPoint, parameters: parameters ?? self.parameters) { value in
