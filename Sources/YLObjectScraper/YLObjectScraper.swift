@@ -1,12 +1,12 @@
 import Foundation
 
-class YLObjectScraper<T: Codable> {
+open class YLObjectScraper<T: Codable> {
     var endPoint: URL
     var parameters: [String:String]?
     var networkManager: NetworkManager<T>
     var dataManager: DataManager<T>
     
-    init?(endPoint: String,
+    public init?(endPoint: String,
         networkHeader: [String: String]? = nil,
         parameters: [String: String]? = nil) {
         guard let endPoint = URL(string: endPoint) else {
