@@ -10,7 +10,7 @@ import Combine
 
 struct NetworkManager<T: Codable> {
     var cancellabes = [AnyCancellable]()
-    var publisher: AnyPublisher<T, Error>? = nil
+    var publisher: AnyPublisher<T, NetworkFailureReason>? = nil
     var header = [String: String]()
 }
 
@@ -35,23 +35,44 @@ extension NetworkManager {
             request.setValue(value, forHTTPHeaderField: key)
         })
         
-        publisher =  URLSession.shared.dataTaskPublisher(for: request)
+        publisher = URLSession.shared.dataTaskPublisher(for: request)
             .map { $0.data }
             .decode(type: T.self, decoder: JSONDecoder())
+            .mapError({ error in
+                switch error {
+                case is Swift.DecodingError:
+                    return .decodingFailed
+                case let urlError as URLError:
+                    return .sessionFailed(error: urlError)
+                default:
+                    return .other(error)
+                }
+            })
             .eraseToAnyPublisher()
     }
     
-    private mutating func fetch(completion: @escaping ((T) -> ())) {
-        publisher?.sink(receiveCompletion: { _ in }, receiveValue: completion)
+    private mutating func fetch(completion: @escaping ((T) -> ()),
+                                errorCompletion: ((NetworkFailureReason)->())? = nil) {
+        publisher?
+            .sink(receiveCompletion: { error in
+                print(error)
+            }, receiveValue: completion)
             .store(in: &cancellabes)
     }
     
     mutating func call(url: URL,
               parameters: [String: String]? = nil,
               header: [String: String]? = nil,
-              completion: @escaping ((T) -> ())
+              completion: @escaping ((T) -> ()),
+              errorCompletion: ((NetworkFailureReason)->())? = nil
     ) {
         prepare(url: url, parameters: parameters, header: header)
-        fetch(completion: completion)
+        fetch(completion: completion, errorCompletion: errorCompletion)
     }
 }
+
+public enum NetworkFailureReason : Error {
+      case sessionFailed(error: URLError)
+      case decodingFailed
+      case other(Error)
+  }

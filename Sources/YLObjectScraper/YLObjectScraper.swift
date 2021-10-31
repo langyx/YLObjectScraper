@@ -22,11 +22,17 @@ open class YLObjectScraper<T: Codable> {
 extension YLObjectScraper {
     open func get(with parameters: [String: String]? = nil,
              save: Bool = true,
-             completion: ((T)->())? = nil) {
+             completion: ((T)->())? = nil,
+             errorCompletion: ((NetworkFailureReason)->())? = nil) {
+
         networkManager.call(url: endPoint, parameters: parameters ?? self.parameters) { value in
             self.dataManager.data = value
             if save { self.save() }
             if let completion = completion { completion(value) }
+        } errorCompletion: { failureReason in
+            if let errorCompletion = errorCompletion {
+                errorCompletion(failureReason)
+            }
         }
     }
     
