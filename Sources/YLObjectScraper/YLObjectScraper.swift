@@ -26,8 +26,10 @@ extension YLObjectScraper {
              errorCompletion: ((NetworkFailureReason)->())? = nil) {
 
         networkManager.call(url: endPoint, parameters: parameters ?? self.parameters) { value in
-            self.dataManager.data = value
-            if save { self.save() }
+            if save {
+                self.dataManager.data = value
+                self.save()
+            }
             if let completion = completion { completion(value) }
         } errorCompletion: { failureReason in
             if let errorCompletion = errorCompletion {
